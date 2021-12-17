@@ -33,6 +33,11 @@ export default class Start extends React.Component{
         </Button>
 
     Adds the entered username to the header by using the state
+
+            accessible={true}
+  accessibilityLabel="More options"
+  accessibilityHint="Lets you choose to send an image or your geolocation."
+  accessibilityRole="button"
   */
   render() {
   return (
@@ -46,16 +51,28 @@ export default class Start extends React.Component{
     <Text style={styles.colorTitle}>Choose Background Color</Text>
 
     <View style={styles.colorsList}>
-        <TouchableOpacity onPress={() => this.changeBgColor(this.colors.color1)}>
+        <TouchableOpacity 
+        accessible={true} accessibilityLabel="More Options" accessibilityHint="Lets you choose background color on chat page."
+        accessibilityRole="button"
+        onPress={() => this.changeBgColor(this.colors.color1)}>
         <View style={styles.color1}></View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => this.changeBgColor(this.colors.color2)}>
+        <TouchableOpacity 
+        accessible={true} accessibilityLabel="More Options" accessibilityHint="Lets you choose background color on chat page."
+        accessibilityRole="button"
+        onPress={() => this.changeBgColor(this.colors.color2)}>
         <View style={styles.color2}></View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => this.changeBgColor(this.colors.color3)}>
+        <TouchableOpacity
+        accessible={true} accessibilityLabel="More Options" accessibilityHint="Lets you choose background color on chat page."
+        accessibilityRole="button"
+        onPress={() => this.changeBgColor(this.colors.color3)}>
         <View style={styles.color3}></View>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => this.changeBgColor(this.colors.color4)}>
+        <TouchableOpacity
+        accessible={true} accessibilityLabel="More Options" accessibilityHint="Lets you choose background color on chat page."
+        accessibilityRole="button"
+        onPress={() => this.changeBgColor(this.colors.color4)}>
         <View style={styles.color4}></View>
         </TouchableOpacity>
     </View>
