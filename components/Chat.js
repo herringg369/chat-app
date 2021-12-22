@@ -1,6 +1,10 @@
 import React from 'react';
 import {  Platform, KeyboardAvoidingView, StyleSheet, Text, View } from 'react-native'
 import { GiftedChat } from 'react-native-gifted-chat'
+import { initializeApp } from "firebase/app";
+
+import firebase from 'firebase/app'
+import { CollectionReference, collection, getDocs } from 'firebase/firestore';
 
 export default class Chat extends React.Component{
   constructor() {
@@ -8,7 +12,40 @@ export default class Chat extends React.Component{
     this.state = {
       messages: [],
     }
+
+    // Your web app's Firebase configuration
+    const firebaseConfig = {
+      apiKey: "AIzaSyCCCoZh_np4z81tktClSvO6HFWdQuTwQvQ",
+      authDomain: "chatapp-98fab.firebaseapp.com",
+      projectId: "chatapp-98fab",
+      storageBucket: "chatapp-98fab.appspot.com",
+      messagingSenderId: "420473406026",
+      appId: "1:420473406026:web:7e8ec10057035bac42dcb3"
+    };
+
+  /*  
+  How it's supposed to be done
+
+  this.referenceMessages = firebase.firestore().collection("messages");
+  */
+
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+
+  // Stack overflow fix
+  db.collection("messages").get().then(function(querySnapshot) {
+      querySnapshot.forEach(function(doc) {
+          console.log(doc.id, " => ", doc.data());
+      });
+  });
   }
+
+  /* addMessage() {
+    this.referenceMessages.add({
+      text: 'Hello Mario',
+      user: 'React Native2',
+    });
+  } */
 
   // message format
 
@@ -34,16 +71,8 @@ export default class Chat extends React.Component{
         },
       ]
     })
-  }
-
-  /*
-     {
-    _id: 2,
-    text: 'This is a system message',
-    createdAt: new Date(),
-    system: true,
-   },
-  */
+  
+}
 
   // previousState refers to messages before they're changed
   // append() is from gifted-chat, append() = appends new messages to the message object
@@ -69,7 +98,7 @@ allows for a fix for android phones not loading keyboard correctly
     const { bgColor } = this.props.route.params;
 
   return (
-    <View style={{ flex: 1, width: "100%", height: "100%"}}>
+    <View style={{ flex: 1, width: "100%", height: "100%", backgroundColor: bgColor}}>
     <GiftedChat 
     messages={this.state.messages}
     onSend={messages => this.onSend(messages)}
