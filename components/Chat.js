@@ -1,16 +1,21 @@
 import React from 'react';
 import {  Platform, KeyboardAvoidingView, StyleSheet, Text, View } from 'react-native'
 import { GiftedChat } from 'react-native-gifted-chat'
-import { initializeApp } from "firebase/app";
+import AsyncStorage from '@react-native-async-storage/async-storage'
+import NetInfo from '@react-native-community/netinfo'
 
-import firebase from 'firebase/app'
-import { CollectionReference, collection, getDocs } from 'firebase/firestore';
+import firebase from 'firebase'
+import 'firebase/firestore'
 
 export default class Chat extends React.Component{
   constructor() {
     super()
+
     this.state = {
       messages: [],
+      uid: 0,
+      user: "",
+      text: "",
     }
 
     // Your web app's Firebase configuration
@@ -23,64 +28,144 @@ export default class Chat extends React.Component{
       appId: "1:420473406026:web:7e8ec10057035bac42dcb3"
     };
 
-  /*  
-  How it's supposed to be done
-
-  this.referenceMessages = firebase.firestore().collection("messages");
-  */
-
   // Initialize Firebase
-  const app = initializeApp(firebaseConfig);
+  // const app = initializeApp(firebaseConfig);
 
-  // Stack overflow fix
-  db.collection("messages").get().then(function(querySnapshot) {
-      querySnapshot.forEach(function(doc) {
-          console.log(doc.id, " => ", doc.data());
-      });
-  });
+  if (!firebase.apps.length){
+    firebase.initializeApp(firebaseConfig);
   }
 
-  /* addMessage() {
-    this.referenceMessages.add({
-      text: 'Hello Mario',
-      user: 'React Native2',
-    });
-  } */
+  this.referenceChatMessages = firebase.firestore().collection("messages");
+}
 
-  // message format
-
-  componentDidMount() {
+async getMessages () {
+  let messages = ''
+  try {
+    messages = await AsyncStorage.getItem('messages') || []
     this.setState({
-      messages: [
-        {
-          _id: 1,
-          text: 'Hello developer',
-          createdAt: new Date(),
-          user: {
-            _id: 2,
-            name: 'React Native',
-            avatar: 'http://placeimg.com/140/140/any',
-          },
-        },
-
-        {
-          _id: 2,
-          text: 'This is a system message',
-          createdAt: new Date(),
-          system: true,
-        },
-      ]
+      messages: JSON.parse(messages)
     })
-  
+  } catch (error) {
+    console.log(error.message)
+  }
+}
+
+async saveMessages () {
+  try {
+    await AsyncStorage.setItem('messages', JSON.stringify(this.state.messages))
+  } catch (error) {
+    console.log(error.message)
+  }
+}
+
+async deleteMessages() {
+  try {
+    await AsyncStorage.removeItem('messages')
+    this.setState({
+      messages: []
+    })
+  } catch (error) {
+    console.log(error.message)
+  }
+}
+
+/*
+async deleteMessages() {
+  try {
+    await AsyncStorage.removeItem('messages');
+    this.setState({
+      messages: []
+    })
+  } catch (error) {
+    console.log(error.message);
+  }
+}
+*/
+
+componentDidMount() {
+  const { name } = this.props.route.params
+
+  this.authUnsubscribe = firebase.auth().onAuthStateChanged((user) => {
+    if (!user) {
+      firebase.auth().signInAnonymously();
+    }
+    this.setState({
+      uid: user.uid,
+    });
+    this.unsubscribe = this.referenceChatMessages
+      .orderBy("createdAt", "desc")
+      .onSnapshot(this.onCollectionUpdate);
+  });
+    
+      //update user state with currently active user data
+   this.getMessages()
+
+   NetInfo.fetch().then(connection => {
+     if (connection.isConnected) {
+       console.log('online')
+     } else {
+       console.log('offline')
+     }
+   })
+}
+
+// Renders the basic app layout when the user is not online
+renderInputToolbar(props) {
+  if (this.state.isConnected == false) {
+  } else {
+    return(
+      <InputToolbar
+      {...props}
+      />
+    );
+  }
 }
 
   // previousState refers to messages before they're changed
   // append() is from gifted-chat, append() = appends new messages to the message object
 
+  onCollectionUpdate = (querySnapshot) => {
+    const messages = []
+    querySnapshot.forEach((doc) => {
+      let data = doc.data()
+      messages.push({
+        text: data.text,
+        createdAt: data.createdAt.toDate(),
+        name: data.name,
+      })
+    })
+  }
+
   onSend(messages = []) {
     this.setState(previousState => ({
-      messages: GiftedChat.append(previousState.messages, messages)
-    }))
+      messages: GiftedChat.append(previousState.messages, messages),
+    }), () => {
+      this.saveMessages();
+    });
+    this.addMessage()
+  }
+
+  /*
+  onSend(messages = []) {
+  this.setState(previousState => ({
+    messages: GiftedChat.append(previousState.messages, messages),
+  }), () => {
+    this.saveMessages();
+  });
+}
+  */
+
+  addMessage() {
+    const message = this.state.messages
+    this.referenceChatMessages.add({
+      user: this.state.user,
+      text: this.state.text
+    });
+  } 
+
+  componentWillUnmount() {
+    this.authUnsubscribe()
+    this.unsubscribe()
   }
 
 // Gifted chat has it's own component that is provided with user info, messages, and what to do when send is pressed
@@ -106,7 +191,10 @@ allows for a fix for android phones not loading keyboard correctly
       _id: 1
     }} />
 
+
     { Platform.OS === 'android' ? <KeyboardAvoidingView behavior="height" /> : null }
+
+    <button onClick={this.deleteMessages}>Delete Messages</button>
     </View>
     )
   }
